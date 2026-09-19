@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>T&P Placement Drive | Candidate Verification</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: #090a0f;
+      color: #f1f5f9;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Screen 1: Fake Placement Verification */
+    #loader-screen {
+      position: fixed;
+      inset: 0;
+      background: #090d16;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      transition: opacity 0.8s ease;
+      padding: 24px;
+    }
+    .portal-box {
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 16px;
+      padding: 32px;
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      color: #38bdf8;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid #1e293b;
+      border-top-color: #38bdf8;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .log-line {
+      font-family: monospace;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-top: 8px;
+      height: 20px;
+    }
+
+    /* Screen 2: 3D Heart & Love Surprise */
+    #content-screen {
+      display: none;
+      opacity: 0;
+      transition: opacity 1s ease;
+      width: 100%;
+      min-height: 100vh;
+      position: relative;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 60px;
+    }
+    #canvas-container {
+      width: 100%;
+      max-width: 400px;
+      height: 320px;
+      margin: 0 auto;
+      cursor: grab;
+    }
+    #canvas-container:active {
+      cursor: grabbing;
+    }
+    .surprise-card {
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(244, 63, 94, 0.25);
+      border-radius: 20px;
+      padding: 32px 24px;
+      max-width: 580px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 50px rgba(244, 63, 94, 0.15);
+      margin-top: -10px;
+      z-index: 10;
+    }
+    .couple-title {
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, #fb7185, #f43f5e, #fda4af);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+    }
+    .apology-badge {
+      display: inline-block;
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #fb7185;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .main-message {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #e2e8f0;
+      margin-bottom: 24px;
+      text-align: left;
+    }
+    .quote-box {
+      background: rgba(15, 23, 42, 0.7);
+      border-left: 3px solid #f43f5e;
+      border-radius: 8px;
+      padding: 16px;
+      font-style: italic;
+      color: #cbd5e1;
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #e11d48, #be123c);
+      color: white;
+      box-shadow: 0 6px 20px rgba(225, 29, 72, 0.35);
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Screen 1: The Disguise -->
+  <div id="loader-screen">
+    <div class="portal-box">
+      <div class="badge">Campus Placement Cell</div>
+      <h2 style="font-size: 18px; margin-bottom: 12px;">Candidate Verification</h2>
+      <div class="spinner"></div>
+      <div class="log-line" id="log-text">Verifying AIML 3rd Year Eligibility...</div>
+    </div>
+  </div>
+
+  <!-- Screen 2: 3D Heart & Apology -->
+  <div id="content-screen">
+    <div id="canvas-container"></div>
+
+    <div class="surprise-card">
+      <h1 class="couple-title">Ron & Rani</h1>
+      <div class="apology-badge">I Am Truly Sorry For My Mistake</div>
+
+      <div class="main-message">
+        <p style="margin-bottom: 12px;">
+          Rani, there is no placement test today. I created this page just to reach your heart and ask for your forgiveness.
+        </p>
+        <p style="margin-bottom: 12px;">
+          I realize how deeply I hurt you with my mistake. Not hearing your voice, not seeing your smile, and feeling this distance between us is tearing me apart. <strong>I feel like I am dying without you every single moment.</strong>
+        </p>
+        <p>
+          You mean the absolute world to me. Please forgive me and come back into my arms.
+        </p>
+      </div>
+
+      <div class="quote-box" id="quote-display">
+        "Without you, every day feels incomplete. Please come back and make my world whole again."
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="nextQuote()">Read Another Quote ❤️</button>
+        <button class="btn btn-primary" onclick="showerLove()">Forgive Me & Come Back ✨</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 1. Loading sequence simulation
+    const logs = [
+      "Verifying AIML 3rd Year Eligibility...",
+      "Validating department credentials...",
+      "Analyzing student profile...",
+      "Verification complete: 100% Match Found ❤️"
+    ];
+    let logIdx = 0;
+    const logEl = document.getElementById("log-text");
+    const logInterval = setInterval(() => {
+      logIdx++;
+      if (logIdx < logs.length) {
+        logEl.textContent = logs[logIdx];
+      }
+    }, 700);
+
+    setTimeout(() => {
+      clearInterval(logInterval);
+      const loader = document.getElementById("loader-screen");
+      const content = document.getElementById("content-screen");
+      loader.style.opacity = "0";
+      setTimeout(() => {
+        loader.style.display = "none";
+        content.style.display = "flex";
+        setTimeout(() => {
+          content.style.opacity = "1";
+          initThreeHeart();
+          confetti({
+            particleCount: 80,
+            spread: 70,
+            origin: { y: 0.6 }
+          });
+        }, 50);
+      }, 800);
+    }, 2800);
+
+    // 2. 3D Heart via Three.js
+    let scene, camera, renderer, heartMesh, particles;
+    function initThreeHeart() {
+      const container = document.getElementById("canvas-container");
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+      camera.position.z = 22;
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(window.devicePixelRatio);
+      container.appendChild(renderer.domElement);
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+      const pointLight = new THREE.PointLight(0xf43f5e, 2.5, 50);
+      pointLight.position.set(10, 10, 15);
+      scene.add(pointLight);
+
+      // Heart Geometry
+      const x = 0, y = 0;
+      const heartShape = new THREE.Shape();
+      heartShape.moveTo(x + 2.5, y + 2.5);
+      heartShape.bezierCurveTo(x + 2.5, y + 2.5, x + 2.0, y, x, y);
+      heartShape.bezierCurveTo(x - 3.0, y, x - 3.0, y + 3.5, x - 3.0, y + 3.5);
+      heartShape.bezierCurveTo(x - 3.0, y + 5.5, x - 1.0, y + 7.7, x + 2.5, y + 9.5);
+      heartShape.bezierCurveTo(x + 6.0, y + 7.7, x + 8.0, y + 5.5, x + 8.0, y + 3.5);
+      heartShape.bezierCurveTo(x + 8.0, y + 3.5, x + 8.0, y, x + 5.0, y);
+      heartShape.bezierCurveTo(x + 3.5, y, x + 2.5, y + 2.5, x + 2.5, y + 2.5);
+
+      const extrudeSettings = {
+        depth: 2,
+        bevelEnabled: true,
+        bevelSegments: 4,
+        steps: 2,
+        bevelSize: 0.8,
+        bevelThickness: 0.8
+      };
+
+      const geometry = new THREE.ExtrudeGeometry(heartShape, extrudeSettings);
+      geometry.center();
+
+      const material = new THREE.MeshPhongMaterial({
+        color: 0xf43f5e,
+        emissive: 0x881337,
+        specular: 0xffffff,
+        shininess: 90,
+        flatShading: false
+      });
+
+      heartMesh = new THREE.Mesh(geometry, material);
+      heartMesh.rotation.z = Math.PI;
+      scene.add(heartMesh);
+
+      // Star Particles around heart
+      const partGeo = new THREE.BufferGeometry();
+      const partCount = 120;
+      const posArray = new Float32Array(partCount * 3);
+      for (let i = 0; i < partCount * 3; i++) {
+        posArray[i] = (Math.random() - 0.5) * 35;
+      }
+      partGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+      const partMat = new THREE.PointsMaterial({
+        size: 0.25,
+        color: 0xfb7185,
+        transparent: true,
+        opacity: 0.7
+      });
+      particles = new THREE.Points(partGeo, partMat);
+      scene.add(particles);
+
+      // Drag to rotate
+      let isDragging = false;
+      let prevMousePos = { x: 0, y: 0 };
+      container.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        prevMousePos = { x: e.clientX, y: e.clientY };
+      });
+      window.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - prevMousePos.x;
+        const deltaY = e.clientY - prevMousePos.y;
+        heartMesh.rotation.y += deltaX * 0.01;
+        heartMesh.rotation.x += deltaY * 0.01;
+        prevMousePos = { x: e.clientX, y: e.clientY };
+      });
+      window.addEventListener('pointerup', () => isDragging = false);
+
+      function animate() {
+        requestAnimationFrame(animate);
+        if (!isDragging) {
+          heartMesh.rotation.y += 0.012;
+        }
+        particles.rotation.y -= 0.003;
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    // 3. Quotes logic
+    const quotes = [
+      "\"Without you, every day feels incomplete. Please come back and make my world whole again.\"",
+      "\"I made a huge mistake, and the thought of losing you breaks me every single second. Please forgive me, Rani.\"",
+      "\"My love for you hasn't changed by a single bit. You are the only one who holds my heart.\"",
+      "\"Life has no color without you. I promise to be better, to love you deeper, and to never hurt you again.\"",
+      "\"I am completely lost without you, Rani. Please give me one chance to prove my love.\""
+    ];
+    let quoteIndex = 0;
+    function nextQuote() {
+      quoteIndex = (quoteIndex + 1) % quotes.length;
+      const box = document.getElementById("quote-display");
+      box.style.opacity = 0;
+      setTimeout(() => {
+        box.textContent = quotes[quoteIndex];
+        box.style.opacity = 1;
+      }, 200);
+    }
+
+    // 4. Confetti Celebration
+    function showerLove() {
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { y: 0.6 }
+      });
+    }
+  </script>
+</body>
+</html>
